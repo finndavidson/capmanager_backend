@@ -183,7 +183,7 @@ router.post('/update', async (req, res) => {
         db.commit();
     }
     catch (err) {
-        console.error('Error in /update:', err);
+        console.error('Error in trade/update:', err);
         res.status(500).json({ error: 'Database error', details: err.message });
     }
 });

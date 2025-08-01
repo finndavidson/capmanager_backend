@@ -6,9 +6,18 @@ const db = database;
 
 //get all players for a specific team
 router.get('/team', (req, res) => {
-    const sql = "SELECT * FROM player where team_id =" + req.query.team + ";";
-    db.query(sql, (err, data) => {
-        if (err) return res.json(err);
+    const teamId = req.query.team;
+
+    if (!teamId || isNaN(teamId)) {
+        return res.status(400).json({ error: 'Valid player ID required' });
+    }
+
+    const sql = "SELECT * FROM player where team_id = ?;";
+    db.query(sql, [teamId], (err, data) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
         return res.json(data);
     })
 })
@@ -17,42 +26,80 @@ router.get('/team', (req, res) => {
 router.get('/', (req, res) => {
     const sql = "SELECT * FROM player;";
     db.query(sql, (err, data) => {
-        if (err) return res.json(err);
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
         return res.json(data);
     })
 })
 
 //get players based on the most recently altered status 
 router.get('/recent', (req, res) => {
-    const sql = "SELECT * FROM player Order By last_altered DESC LIMIT " + req.query.limiter + ";";
-    db.query(sql, (err, data) => {
-        if (err) return res.json(err);
+    let limit = req.query.limit
+    
+    if(!limit || isNaN(limit)){
+        return res.status(400).json({ error: 'Valid limit required'})
+    }
+
+    limit = parseInt(limit);
+    const sql = "SELECT * FROM player Order By last_altered DESC LIMIT ?;";
+    db.query(sql,[limit], (err, data) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
         return res.json(data);
     })
 })
 
 //get a player
 router.get('/player', (req, res) => {
-    const sql = "Select * From player WHERE player_id = " + req.query.player + ";";
-    db.query(sql, (err, data) => {
-        if (err) return res.json(err);
+    const playerId = req.query.player;
+
+    if (!playerId || isNaN(playerId)) {
+        return res.status(400).json({ error: 'Valid player ID required' });
+    }
+
+    const sql = "Select * From player WHERE player_id = ?;";
+    db.query(sql, [playerId], (err, data) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
         return res.json(data);
     })
 })
 
 //get players on the practice squad
 router.get('/practice', (req, res) => {
-    const sql = "Select * From player WHERE status = 'practice' && team_id = " + req.query.team + ";";
-    db.query(sql, (err, data) => {
-        if (err) return res.json(err);
+    const teamId = req.query.team;
+
+    if (!teamId || isNaN(teamId)) {
+        return res.status(400).json({ error: 'Valid player ID required' });
+    }
+
+    const sql = "Select * From player WHERE status = 'practice' && team_id = ?;";
+    db.query(sql, [teamId], (err, data) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
         return res.json(data);
     })
 })
 
 //get contracts based on the most recently altered
 router.get('/recent', (req, res) => {
-    const sql = "SELECT * FROM player Order By last_altered DESC LIMIT 1;";
-    db.query(sql, (err, data) => {
+    let limit = req.query.limit;
+
+    if(!limit || isNaN(limit)){
+        return res.status(400).json({ error: 'Valid limit required'})
+    }
+    
+    limit = parseInt(limit);
+    const sql = "SELECT * FROM player Order By last_altered DESC LIMIT ?;";
+    db.query(sql, [limit], (err, data) => {
         if (err) return res.json(err);
         return res.json(data);
     })
@@ -60,6 +107,18 @@ router.get('/recent', (req, res) => {
 
 //get players sorted by cap hit
 router.get('/caphit', (req, res) => {
+    const year = req.query.year;
+    let limit = req.query.limit;
+
+    if (!year || isNaN(year)) {
+        return res.status(400).json({ error: 'Valid year required' });
+    }
+
+    if(!limit || isNaN(limit)){
+        return res.status(400).json({ error: 'Valid limit required'})
+    }
+
+    limit = parseInt(limit);
     const sql = `
         SELECT 
             player.player_id,
@@ -81,12 +140,12 @@ router.get('/caphit', (req, res) => {
             FROM
                 contract
             WHERE
-                year = ${req.query.year}
+                year = ?
         ) contract ON player.player_id = contract.player_id
         ORDER BY 
-            contract.cap_hit DESC LIMIT ${req.query.limiter};
+            contract.cap_hit DESC LIMIT ?;
     `;
-    db.query(sql, (err, data) => {
+    db.query(sql, [year,limit], (err, data) => {
         if (err) return res.json(err);
         return res.json(data);
     })
